@@ -2,41 +2,49 @@ import json
 import math
 import argparse
 import pandas as pd
+from collections import defaultdict
 
-def get_parking_lots_lat_lng():
+def get_pklots_latlng():
     df = pd.read_excel('../data/parking_lot.xlsx')
-    parking_lots = df['geometry'].to_list()
+    pklots_geometry = df['geometry'].to_list()
+    pklots_name = df['name'].to_list()
 
-    parking_lots_lat_lng = []
-    for parking_lot in parking_lots:
-        parking_lot_geometry = json.loads(parking_lot.replace("'", '"'))
-        parking_lots_lat_lng.append(parking_lot_geometry['location'])
+    pklots_latlng, pklots_latlng2name = [], defaultdict(str)
+    for pklot_geometry, pklot_name in zip(pklots_geometry, pklots_name):
+        pklot_geometry = json.loads(pklot_geometry.replace("'", '"'))
+        pklots_latlng.append(pklot_geometry['location'])
+        pklots_latlng2name[ 
+            (
+                pklot_geometry['location']['lat'], 
+                pklot_geometry['location']['lng']
+            ) 
+        ] = pklot_name
     
-    return parking_lots_lat_lng
+    return pklots_latlng, pklots_latlng2name
 
 def get_closest_parking_p2poly(centroid, lots):
     INF = float('inf')
-    min_dist, closest_parking_lot = INF, lots[0]
+    min_dist, closest_pklot = INF, lots[0]
     for pklot in lots:
         dist = math.dist([centroid['lat'], centroid['lng']], [pklot['lat'], pklot['lng']])
         if dist < min_dist:
             min_dist = dist
-            closest_parking_lot = pklot
+            closest_pklot = pklot
 
-    return closest_parking_lot
+    return closest_pklot
 
 def get_closest_parking_p2point(coords, lots):
     INF = float('inf')
-    min_dist, closest_parking_lot = INF, lots[0]
+    min_dist, closest_pklot = INF, lots[0]
     for pklot in lots:
         dist = 0
         for coord in coords:
             dist += math.dist([coord['lat'], coord['lng']], [pklot['lat'], pklot['lng']])
         if dist < min_dist:
             min_dist = dist
-            closest_parking_lot = pklot
+            closest_pklot = pklot
 
-    return closest_parking_lot
+    return closest_pklot
 
 def get_centroid_avg_start_end(POIs, start_idx=0, end_idx=-1):
     INF = float('inf')
@@ -97,7 +105,7 @@ def main():
         for lat, lng in (coord.split(',') for coord in args.polygon)
     ]
 
-    parking_lots_lat_lng = get_parking_lots_lat_lng()
+    pklots_latlng, pklots_latlng2name = get_pklots_latlng()
 
     if args.centroid:
         if args.centroid == 'avg':
@@ -105,27 +113,19 @@ def main():
         elif args.centroid == 'avg_start_end':
             POIs = get_centroid_avg_start_end(POIs)
     
-    closest_parking_lot = None
+    closest_pklot = None
     if args.algorithm == 'p2point':
-        closest_parking_lot = get_closest_parking_p2point(POIs, parking_lots_lat_lng)
+        closest_pklot = get_closest_parking_p2point(POIs, pklots_latlng)
     elif args.algorithm == 'p2poly':
-        closest_parking_lot = get_closest_parking_p2poly(POIs[0], parking_lots_lat_lng)
+        closest_pklot = get_closest_parking_p2poly(POIs[0], pklots_latlng)
 
-    print(vars(args))
-    print(closest_parking_lot)
-
-    #point to polygon
-    POIs = get_centroid_avg(POIs)
-    closest_parking_lot_lat_lng = get_closest_parking_p2poly(POIs[0], parking_lots_lat_lng)
-    print("point to polygon (centroid avg): ", closest_parking_lot_lat_lng)
-
-    POIs = get_centroid_avg_start_end(POIs)
-    closest_parking_lot_lat_lng = get_closest_parking_p2poly(POIs[0], parking_lots_lat_lng)
-    print("point to polygon (centroid avg start/end): ", closest_parking_lot_lat_lng)
-
-    #point to point
-    closest_parking_lot_lat_lng = get_closest_parking_p2point(POIs, parking_lots_lat_lng)
-    print("point to point: ", closest_parking_lot_lat_lng)
+    print("{} - {}".format(
+        pklots_latlng2name[(
+            closest_pklot['lat'],
+            closest_pklot['lng']
+        )],
+        closest_pklot,
+    ))
 
 if __name__ == '__main__':
     main()
