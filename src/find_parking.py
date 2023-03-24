@@ -1,8 +1,30 @@
 import json
 import math
+from geopy import Nominatim
 import argparse
 import pandas as pd
 from collections import defaultdict
+
+
+def get_POIs_from_file(filename = "../data/POIs.txt"):
+    POIs = []
+    with open(filename) as fptr:
+        addresses = fptr.readlines()
+        for address in addresses:
+            locator = Nominatim(user_agent="myGeocoder")
+            location = locator.geocode(address)
+            if not location:
+                print("[Error] Coordinates can't be found for {}".format(address))
+                continue
+            POIs.append(
+                {
+                    'lat' : location.latitude,
+                    'lng' : location.longitude,
+                }
+            )
+
+    return POIs
+
 
 def get_pklots_latlng():
     df = pd.read_excel('../data/parking_lot.xlsx')
@@ -88,36 +110,32 @@ def get_centroid_avg(POIs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--polygon', nargs="+")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-p', '--polygon', nargs="+")
+    group.add_argument('-f', '--filename')
     parser.add_argument('-c', '--centroid', choices=['avg', 'avg_start_end'])
     parser.add_argument('-a', '--algorithm', choices=['p2point', 'p2poly'], required=True)
     args = parser.parse_args()
     
-    default_POIs = [
-        {'lat': 37.392109, 'lng': -122.038797},
-        {'lat': 37.387970, 'lng': -122.020247},
-        {'lat': 37.372724, 'lng': -122.014402},
-        {'lat': 37.363737, 'lng': -122.033207},
-        {'lat': 37.381869, 'lng': -122.043106},
-    ]
-    POIs = default_POIs if args.polygon == None else [
+    POIs = [
         {'lat' : float(lat), 'lng' : float(lng)}
         for lat, lng in (coord.split(',') for coord in args.polygon)
-    ]
-
-    pklots_latlng, pklots_latlng2name = get_pklots_latlng()
+    ] if args.polygon else get_POIs_from_file(args.filename)
 
     if args.centroid:
         if args.centroid == 'avg':
             POIs = get_centroid_avg(POIs)
         elif args.centroid == 'avg_start_end':
             POIs = get_centroid_avg_start_end(POIs)
+
+    pklots_latlng, pklots_latlng2name = get_pklots_latlng()
     
     closest_pklot = None
     if args.algorithm == 'p2point':
         closest_pklot = get_closest_parking_p2point(POIs, pklots_latlng)
     elif args.algorithm == 'p2poly':
         closest_pklot = get_closest_parking_p2poly(POIs[0], pklots_latlng)
+        
 
     print("{} - {}".format(
         pklots_latlng2name[(
