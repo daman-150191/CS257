@@ -10,12 +10,20 @@ def get_POIs_from_file(filename = "../data/POIs.txt"):
     POIs = []
     with open(filename) as fptr:
         addresses = fptr.readlines()
-        for address in addresses:
+        for idx, address in enumerate(addresses):
             locator = Nominatim(user_agent="myGeocoder")
-            location = locator.geocode(address)
+            location = locator.geocode(address.strip())
             if not location:
                 print("[Error] Coordinates can't be found for {}".format(address))
                 continue
+            print("POI({}): {}\n{}\n".format(
+                idx, 
+                address.strip(),
+                {
+                    'lat' : location.latitude,
+                    'lng' : location.longitude,
+                } 
+            )) 
             POIs.append(
                 {
                     'lat' : location.latitude,
@@ -155,7 +163,7 @@ def main():
         closest_pklot = get_closest_parking_p2poly(POIs[0], pklots_latlng)
         
 
-    print("{} - {}".format(
+    print("Closest parking: {} - {}".format(
         pklots_latlng2name[(
             closest_pklot['lat'],
             closest_pklot['lng']
