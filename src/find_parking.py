@@ -109,12 +109,30 @@ def get_centroid_avg(POIs):
     }]
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Find the name and coordinate of the nearest parking lot given a list of POIs"
+    )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-p', '--polygon', nargs="+")
-    group.add_argument('-f', '--filename')
-    parser.add_argument('-c', '--centroid', choices=['avg', 'avg_start_end'])
-    parser.add_argument('-a', '--algorithm', choices=['p2point', 'p2poly'], required=True)
+    group.add_argument(
+        '-p', '--polygon', 
+        nargs="+", 
+        help='Specify POI(s) with 1+ of coordinates with the format of \"LAT,LNG\", where comma separate latitude and longitude of each coordinate tuple',
+    )
+    group.add_argument(
+        '-f', '--filename',
+        help="Read a list of POIs from file with each POI a separate line of physical address"
+    )
+    parser.add_argument(
+        '-c', '--centroid', 
+        choices=['avg', 'avg_start_end'],
+        help="Algorithms to abstract a list of POIs into a centroid node"
+    )
+    parser.add_argument(
+        '-a', '--algorithm', 
+        choices=['p2point', 'p2poly'], 
+        required=True,
+        help="Algorithms to measure the distance"
+    )
     args = parser.parse_args()
     
     POIs = [
