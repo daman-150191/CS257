@@ -4,6 +4,7 @@ from geopy import Nominatim
 import argparse
 import pandas as pd
 from collections import defaultdict
+from math import radians, cos, sin, asin, sqrt
 
 
 def get_POIs_from_file(filename = "../data/POIs.txt"):
@@ -63,18 +64,24 @@ def get_closest_parking_p2poly(centroid, lots):
 
     return closest_pklot
 
-def get_closest_parking_p2point(coords, lots):
+def get_closest_parking_p2point(method, coords, lots):
     INF = float('inf')
     min_dist, closest_pklot = INF, lots[0]
     for pklot in lots:
         dist = 0
         for coord in coords:
-            dist += math.dist([coord['lat'], coord['lng']], [pklot['lat'], pklot['lng']])
+            if method == 'euc': dist += math.dist([coord['lat'], coord['lng']], [pklot['lat'], pklot['lng']])
+            else: dist += haversine_dist(coord['lat'], coord['lng'], pklot['lat'], pklot['lng'])
         if dist < min_dist:
             min_dist = dist
             closest_pklot = pklot
 
     return closest_pklot
+
+def haversine_dist(lat_0, lon_0, lat_1, lon_1):
+      R = 3959.87433 
+      return (3959.87433 * 2*asin(sqrt(sin(radians(lat_1 - lat_0)/2)**2 + 
+                cos(radians(lat_0))*cos(radians(lat_1))*sin(radians(lon_1 - lon_0)/2)**2)))
 
 def get_centroid_avg_start_end(POIs, start_idx=0, end_idx=-1):
     INF = float('inf')
@@ -137,9 +144,14 @@ def main():
     )
     parser.add_argument(
         '-a', '--algorithm', 
-        choices=['p2point', 'p2poly'], 
+        choices=['p2point', 'p2poly'],
         required=True,
         help="Algorithms to measure the distance"
+    )
+    parser.add_argument(
+        '-m', '--method',
+        choices=['euc', 'hav'],
+        help="Distance calculation methods for point-to-point approach"
     )
     args = parser.parse_args()
     
@@ -158,7 +170,7 @@ def main():
     
     closest_pklot = None
     if args.algorithm == 'p2point':
-        closest_pklot = get_closest_parking_p2point(POIs, pklots_latlng)
+        closest_pklot = get_closest_parking_p2point(args.method, POIs, pklots_latlng)
     elif args.algorithm == 'p2poly':
         closest_pklot = get_closest_parking_p2poly(POIs[0], pklots_latlng)
         
