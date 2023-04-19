@@ -8,8 +8,8 @@ from math import radians, cos, sin, asin, sqrt
 
 def get_POIs_latlng(addresses):
     POIs = []
-    locator = Nominatim(user_agent="myGeocoder")
     for idx, address in enumerate(addresses):
+        locator = Nominatim(user_agent="myGeocoder")
         location = locator.geocode(address)
         if not location:
             print("[Error] Coordinates can't be found for {}".format(address))
@@ -175,6 +175,7 @@ def main():
     parser.add_argument(
         '-m', '--method',
         choices=['euc', 'hav'],
+        required=True,
         help="Distance calculation methods for point-to-point approach"
     )
     args = parser.parse_args()
