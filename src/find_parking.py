@@ -6,8 +6,32 @@ import pandas as pd
 from collections import defaultdict
 from math import radians, cos, sin, asin, sqrt
 
+def get_POIs_latlng(addresses):
+    POIs = []
+    locator = Nominatim(user_agent="myGeocoder")
+    for idx, address in enumerate(addresses):
+        location = locator.geocode(address)
+        if not location:
+            print("[Error] Coordinates can't be found for {}".format(address))
+            continue
+        print("POI({}): {}\n{}\n".format(
+            idx, 
+            address.strip(),
+            {
+                'lat' : location.latitude,
+                'lng' : location.longitude,
+            } 
+        )) 
+        POIs.append(
+            {
+                'lat' : location.latitude,
+                'lng' : location.longitude,
+            }
+        )
+    
+    return POIs
 
-def get_POIs_from_file(filename = "../data/POIs.txt"):
+def get_POIs_latlng_from_file(filename = "../data/POIs.txt"):
     POIs = []
     with open(filename) as fptr:
         addresses = fptr.readlines()
@@ -158,7 +182,7 @@ def main():
     POIs = [
         {'lat' : float(lat), 'lng' : float(lng)}
         for lat, lng in (coord.split(',') for coord in args.polygon)
-    ] if args.polygon else get_POIs_from_file(args.filename)
+    ] if args.polygon else get_POIs_latlng_from_file(args.filename)
 
     if args.centroid:
         if args.centroid == 'avg':
