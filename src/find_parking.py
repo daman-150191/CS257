@@ -1,10 +1,8 @@
-import json
 import math
 from geopy import Nominatim
 import argparse
-import pandas as pd
-from collections import defaultdict
 from math import radians, cos, sin, asin, sqrt
+from DBHandler import getpkgdetails
 
 def get_POIs_latlng(addresses):
     POIs = []
@@ -58,23 +56,15 @@ def get_POIs_latlng_from_file(filename = "../data/POIs.txt"):
 
     return POIs
 
-
 def get_pklots_latlng():
-    df = pd.read_excel('../data/parking_lot.xlsx')
-    pklots_geometry = df['geometry'].to_list()
-    pklots_name = df['name'].to_list()
+    pklots_info = getpkgdetails()
+    pklots_latlng = []
+    pklots_latlng2name = []
 
-    pklots_latlng, pklots_latlng2name = [], defaultdict(str)
-    for pklot_geometry, pklot_name in zip(pklots_geometry, pklots_name):
-        pklot_geometry = json.loads(pklot_geometry.replace("'", '"'))
-        pklots_latlng.append(pklot_geometry['location'])
-        pklots_latlng2name[ 
-            (
-                pklot_geometry['location']['lat'], 
-                pklot_geometry['location']['lng']
-            ) 
-        ] = pklot_name
-    
+    for pklot in pklots_info:
+        pklots_latlng.append({'lat': pklot[2], 'lng': pklot[3]})
+        pklots_latlng2name.append({'id': pklot[0], 'name': pklot[1], 'coordinates': {'lat': pklot[2], 'lng': pklot[3]}})
+
     return pklots_latlng, pklots_latlng2name
 
 def get_closest_parking_p2poly(centroid, lots):
@@ -148,6 +138,7 @@ def get_centroid_avg(POIs):
     }]
 
 def main():
+    getpkgdetails()
     parser = argparse.ArgumentParser(
         description="Find the name and coordinate of the nearest parking lot given a list of POIs"
     )
@@ -198,15 +189,12 @@ def main():
         closest_pklot = get_closest_parking_p2point(args.method, POIs, pklots_latlng)
     elif args.algorithm == 'p2poly':
         closest_pklot = get_closest_parking_p2poly(POIs[0], pklots_latlng)
-        
 
-    print("Closest parking: {} - {}".format(
-        pklots_latlng2name[(
-            closest_pklot['lat'],
-            closest_pklot['lng']
-        )],
-        closest_pklot,
-    ))
+    result = [pklot for pklot in pklots_latlng2name if
+              pklot['coordinates']['lat'] == closest_pklot['lat'] and pklot['coordinates']['lng'] == closest_pklot[
+                  'lng']][0]
+    print("Closest Parking Lot:\n {} [{},{}]".format(result['name'], result['coordinates']['lat'],
+                                                     result['coordinates']['lng']))
 
 if __name__ == '__main__':
     main()

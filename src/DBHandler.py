@@ -55,13 +55,13 @@ def getdata():
     return result
 
 
-def getcoordinates():
+def getpkgdetails():
     # Transform point data from db to latitude and longitude coordinates
     connect()
-    cursor.execute("SELECT place_id, ST_X (ST_Transform (geom, 4326)) AS lat, ST_Y (ST_Transform (geom, 4326)) AS "
+    cursor.execute("SELECT place_id, name, ST_X (ST_Transform (geom, 4326)) AS lat, ST_Y (ST_Transform (geom, 4326)) AS "
                    "long FROM parkinglots;")
     result = cursor.fetchall()
-    for row in result:
-        print(row)
+    # for row in result:
+    #     print(row)
     closeconnection()
     return result
