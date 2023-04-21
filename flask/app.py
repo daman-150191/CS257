@@ -32,7 +32,7 @@ def find_parking():
          elif centroid == 'avg_start_end':
             POIs = get_centroid_avg_start_end(POIs)
 
-      pklots_latlng, pklots_latlng2name = get_pklots_latlng()
+      pklots_latlng, pklots_metadata, pklots_latlng2name = get_pklots_latlng()
 
       closest_pklot = None
       if algorithm == 'p2point':
