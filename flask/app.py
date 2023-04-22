@@ -1,30 +1,36 @@
 import sys
 sys.path.append("../src")
+from gmplot import gmplot
 
 from flask import Flask, request, render_template
 from find_parking import *
- 
-app = Flask(__name__)  
- 
-@app.route('/', methods =["GET", "POST"])
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('form.html')
+
+@app.route('/find', methods =["GET", "POST"])
 def find_parking():
     if request.method == "POST":
       addresses = request.form.getlist("addresses")
       algorithm = request.form.get("algorithm")
       centroid = request.form.get("centroid")
       method = request.form.get("method")
-   
+
       print(addresses, algorithm, centroid, method)
 
       # centroid is an option parameters
       if (
          not addresses or
          not algorithm or
-         not method 
+         not method
       ):
          return render_template("form.html")
 
       POIs = get_POIs_latlng(addresses)
+      input_coords = POIs
 
       if centroid:
          if centroid == 'avg':
@@ -47,8 +53,27 @@ def find_parking():
          )],
          closest_pklot,
       ))
-       
-    return render_template("form.html")
- 
+
+    gmap = gmplot.GoogleMapPlotter(37.3347, -121.8753, 13)
+
+    # Extract the latitudes and longitudes from the input data
+    lats = [coord['lat'] for coord in input_coords]
+    lngs = [coord['lng'] for coord in input_coords]
+
+    print(type(lats))
+    print(lngs)
+    # Add the input points to the map
+    gmap.scatter(lats, lngs, c='r', marker=True)
+
+    gmap.scatter([float(closest_pklot['lat'])], [float(closest_pklot['lng'])], c='b', marker=True)
+
+
+
+    gmap.draw('templates/map1.html')
+
+    # Render the HTML file in the Flask app
+    return render_template('map1.html')
+
+
 if __name__=='__main__':
    app.run(debug=False)
