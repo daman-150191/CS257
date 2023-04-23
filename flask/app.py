@@ -54,20 +54,15 @@ def find_parking():
          closest_pklot,
       ))
 
-    gmap = gmplot.GoogleMapPlotter(37.3347, -121.8753, 13)
+    gmap = gmplot.GoogleMapPlotter(closest_pklot['lat'], closest_pklot['lng'], 13)
 
     # Extract the latitudes and longitudes from the input data
     lats = [coord['lat'] for coord in input_coords]
     lngs = [coord['lng'] for coord in input_coords]
 
-    print(type(lats))
-    print(lngs)
     # Add the input points to the map
     gmap.scatter(lats, lngs, c='r', marker=True)
-
     gmap.scatter([float(closest_pklot['lat'])], [float(closest_pklot['lng'])], c='b', marker=True)
-
-
 
     gmap.draw('templates/map1.html')
 
