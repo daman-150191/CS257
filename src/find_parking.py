@@ -4,6 +4,32 @@ import argparse
 from math import radians, cos, sin, asin, sqrt
 from DBHandler import getpkgdetails
 from collections import defaultdict
+from googlemaps import Client as GoogleMaps
+
+def get_POIs_latlng_from_gmap(addresses):
+    POIs = []
+    gmaps = GoogleMaps(open('API_KEY.txt', 'r').read())
+    for idx, address in enumerate(addresses):
+        location = gmaps.geocode(address)
+        if not location:
+            print("[Error] Coordinates can't be found for {}".format(address))
+            continue
+        print("POI({}): {}\n{}\n".format(
+            idx, 
+            address.strip(),
+            {
+                'lat' : location[0]['geometry']['location'] ['lat'],
+                'lng' : location[0]['geometry']['location'] ['lng'],
+            } 
+        )) 
+        POIs.append(
+            {
+                'lat' : location[0]['geometry']['location'] ['lat'],
+                'lng' : location[0]['geometry']['location'] ['lng'],
+            }
+        )
+    
+    return POIs
 
 def get_POIs_latlng(addresses):
     POIs = []

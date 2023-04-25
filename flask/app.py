@@ -13,13 +13,11 @@ def home():
 
 @app.route('/find', methods =["GET", "POST"])
 def find_parking():
-    if request.method == "POST":
+   if request.method == "POST":
       addresses = request.form.getlist("addresses")
       algorithm = request.form.get("algorithm")
       centroid = request.form.get("centroid")
       method = request.form.get("method")
-
-      print(addresses, algorithm, centroid, method)
 
       # centroid is an option parameters
       if (
@@ -28,46 +26,92 @@ def find_parking():
          not method
       ):
          return render_template("form.html")
+      
+      pklots_latlng, pklots_metadata, pklots_latlng2name = get_pklots_latlng()
+      POIs = get_POIs_latlng_from_gmap(addresses)
 
-      POIs = get_POIs_latlng(addresses)
-      input_coords = POIs
-
+      centroid_POI = None
       if centroid:
          if centroid == 'avg':
-            POIs = get_centroid_avg(POIs)
+            centroid_POI = get_centroid_avg(POIs)[0]
          elif centroid == 'avg_start_end':
-            POIs = get_centroid_avg_start_end(POIs)
-
-      pklots_latlng, pklots_metadata, pklots_latlng2name = get_pklots_latlng()
+            centroid_POI = get_centroid_avg_start_end(POIs)[0]
 
       closest_pklot = None
       if algorithm == 'p2point':
-         closest_pklot = get_closest_parking_p2point(method, POIs, pklots_latlng)
+         if centroid:
+            closest_pklot= get_closest_parking_p2point(method, [centroid_POI], pklots_latlng)
+         else:
+            closest_pklot = get_closest_parking_p2point(method, POIs, pklots_latlng)
       elif algorithm == 'p2poly':
-         closest_pklot = get_closest_parking_p2poly(POIs[0], pklots_latlng)
+         if not centroid_POI:
+            centroid_POI = POIs[0]
+            print('[Warning] Algorithm p2poly (Point to Polygon) should pass in an centroid')
+         closest_pklot = get_closest_parking_p2poly(centroid_POI, pklots_latlng)
 
-      print("Closest parking: {} - {}".format(
+   gmap = gmplot.GoogleMapPlotter(closest_pklot['lat'], closest_pklot['lng'], 13, apikey=open('API_KEY.txt', 'r').read())
+
+   # Add all other parking lots
+   gmap.scatter(
+      [pklot_latlng['lat'] for pklot_latlng in pklots_latlng],
+      [pklot_latlng['lng'] for pklot_latlng in pklots_latlng],
+      color = 'grey',
+      marker = True,
+      size = 20,
+      title = [
          pklots_latlng2name[(
-            closest_pklot['lat'],
-            closest_pklot['lng']
-         )],
-         closest_pklot,
-      ))
+            pklot_latlng['lat'],
+            pklot_latlng['lng']
+         )]
+         for pklot_latlng in pklots_latlng
+      ]    
+   )
 
-    gmap = gmplot.GoogleMapPlotter(closest_pklot['lat'], closest_pklot['lng'], 13)
+   # Add centroid to map
+   if centroid:
+      gmap.scatter(
+         [centroid_POI['lat']], 
+         [centroid_POI['lng']], 
+         color = 'green', 
+         marker = True,
+         title = "Centroid"
+      )
 
-    # Extract the latitudes and longitudes from the input data
-    lats = [coord['lat'] for coord in input_coords]
-    lngs = [coord['lng'] for coord in input_coords]
+    # Add POIs to map
+   gmap.scatter(
+      [POI['lat'] for POI in POIs], 
+      [POI['lng'] for POI in POIs], 
+      color = 'r',
+      marker = True, 
+      title = [
+         address
+         for address in addresses
+      ]
+   )
 
-    # Add the input points to the map
-    gmap.scatter(lats, lngs, c='r', marker=True)
-    gmap.scatter([float(closest_pklot['lat'])], [float(closest_pklot['lng'])], c='b', marker=True)
+   # Add closest parking lot
+   gmap.scatter(
+      [closest_pklot['lat']], 
+      [closest_pklot['lng']], 
+      color = 'b', 
+      marker = True,
+      title = pklots_latlng2name[(
+         closest_pklot['lat'],
+         closest_pklot['lng']
+      )]
+   )
 
-    gmap.draw('templates/map1.html')
+   gmap.polygon(
+      [POI['lat'] for POI in POIs],
+      [POI['lng'] for POI in POIs],
+      edge_color='cornflowerblue',
+      edge_width=5
+   )
 
-    # Render the HTML file in the Flask app
-    return render_template('map1.html')
+   gmap.draw('templates/google_map.html')
+
+   # Render the HTML file in the Flask app
+   return render_template('google_map.html')
 
 
 if __name__=='__main__':
