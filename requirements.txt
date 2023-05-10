@@ -1,0 +1,9 @@
+gmplot
+flask
+configparser
+psycopg
+openpyxl
+googlemaps
+argparse
+geopy
+pandas
