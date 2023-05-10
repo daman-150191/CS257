@@ -1,31 +1,31 @@
 # CS257 ParkingLotSearchApp
 The project is created as part of coursework for CS 257 (SJSU)
 
-###Requirements
+### Requirements<br>
 Before compiling, please ensure that the following requirements are fulfilled:<br>
 Python v3.10 or higher<br>
 pip v23 or higher<br>
 
-###Cloning the repository
+### Cloning the repository<br>
 Run this command in a running terminal window:<br>
 git clone https://github.com/daman-150191/CS257.git ParkingLotSearchApp<br>
 Then navigate to the project root directory: <br>
 cd ParkingLotSearchApp
 
-###Installing dependencies
+### Installing dependencies<br>
 From the project root directory, run the following CLI: <br>
 pip install -r requirements.txt
 
-###Compilation
+### Compilation<br>
 The entrypoint for this project is flask/app.py. It can be run from the command line from the project root directory as follows: <br>
 python flask/app.py
 
-###Team Members
+### Team Members<br>
 Cheng-En Sung <br>
 Damanpreet Kaur <br>
 Gargi Sheguri
 
-###Work Distribution
+### Work Distribution<br>
 **Cheng-En Sung:<br>**
 1. Data Collection: Use of Google Maps API to collate parking lot coordinates
 2. Algorithm Implementation: Point-to-polygon distance calculation
