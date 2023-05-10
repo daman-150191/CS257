@@ -23,7 +23,7 @@ def find_parking():
       if (
          not addresses or
          not algorithm or
-         not method
+         (algorithm == 'p2poly' and not method)
       ):
          return render_template("form.html")
       
